@@ -9,6 +9,14 @@ fun JsonObject.emplaceProperty(key: String, value: Int) = this.also { addPropert
 
 val errorMessageRegex = Regex("[^:]+:(.*) at line (\\d+) column (\\d+) .*")
 
+
+/**
+ * Parse error message.
+ *
+ * @param errorMessage error message
+ * @param defaults values to return if errors occured during parsing message
+ * @return parsed message or defaults.
+ */
 fun findOrDefault(errorMessage: String?, vararg defaults: String): List<String> {
     if (errorMessage == null) return defaults.toList()
     val groups = errorMessageRegex.find(errorMessage) ?: return defaults.toList()
@@ -17,6 +25,12 @@ fun findOrDefault(errorMessage: String?, vararg defaults: String): List<String> 
     return destructed
 }
 
+/**
+ * Validate json.
+ *
+ * @param jsonString json to validate
+ * @return json object with input json or with error description.
+ */
 fun JsonParser.processJson(jsonString: String) = try {
     parse(jsonString)
 } catch (ex: JsonParseException) {
