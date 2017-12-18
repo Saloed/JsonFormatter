@@ -4,7 +4,7 @@ Json Validation and Formatting server
 Send json - receive formatted json or error message
 
 Run
-`docker build -t validation-service github.com/Saloed/JsonFormatter && docker run -t --rm -p 80:80 validation-service`
+`docker build -t validation-service github.com/Saloed/JsonFormatter && docker run -t --rm -p 80:8000 validation-service`
 
 Send file to validation
 `curl -s --data-binary @filename.json http://localhost`
