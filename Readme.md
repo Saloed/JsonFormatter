@@ -14,4 +14,6 @@ Example of service response in case of error
  "errorCode"  : 12345,
  "errorMessage" : ["Some error message"],
  "errorPlace" : ["line and column"],
+ "resource": ["json string"],
+ "request-id": ["id"]
 }`

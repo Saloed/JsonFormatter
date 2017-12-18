@@ -3,12 +3,12 @@ package trpo
 import com.google.gson.*
 import com.sun.net.httpserver.HttpServer
 import java.net.InetSocketAddress
+import java.util.concurrent.atomic.AtomicInteger
 
 fun JsonObject.emplaceProperty(key: String, value: String) = this.also { addProperty(key, value) }
 fun JsonObject.emplaceProperty(key: String, value: Int) = this.also { addProperty(key, value) }
 
 val errorMessageRegex = Regex("[^:]+:(.*) at line (\\d+) column (\\d+) .*")
-
 
 /**
  * Parse error message.
@@ -31,13 +31,15 @@ fun findOrDefault(errorMessage: String?, vararg defaults: String): List<String> 
  * @param jsonString json to validate
  * @return json object with input json or with error description.
  */
-fun JsonParser.processJson(jsonString: String) = try {
+fun JsonParser.processJson(jsonString: String, requestId: Int) = try {
     parse(jsonString)
 } catch (ex: JsonParseException) {
     val (message, line, column) = findOrDefault(ex.message, "Unknown error", "-1", "-1")
     JsonObject().emplaceProperty("errorCode", message.hashCode())
             .emplaceProperty("errorMessage", message)
             .emplaceProperty("errorPlace", "line $line column $column")
+            .emplaceProperty("resource", "json string")
+            .emplaceProperty("request-id", requestId)
 }
 
 fun main(args: Array<String>) {
@@ -46,8 +48,12 @@ fun main(args: Array<String>) {
     val server = HttpServer.create()
     val serverPort = (System.getenv("SERVER_PORT") ?: "7777").toInt()
     server.bind(InetSocketAddress(serverPort), 0)
+    val requestIdGenerator = AtomicInteger(0)
     server.createContext("/") {
-        val responseObject = parser.processJson(it.requestBody.bufferedReader().readText())
+        val responseObject = parser.processJson(
+                jsonString = it.requestBody.bufferedReader().readText(),
+                requestId = requestIdGenerator.getAndIncrement()
+        )
         val response = builder.toJson(responseObject) + "\n"
         it.sendResponseHeaders(200, response.length.toLong())
         it.responseBody.write(response.toByteArray())
