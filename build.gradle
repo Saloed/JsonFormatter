@@ -1,26 +1,28 @@
 buildscript {
     ext.kotlin_version = '1.1.51'
     repositories {
-        mavenCentral()
+        mavenCentral();
+        jcenter();
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'se.transmode.gradle:gradle-docker:1.2'
     }
 }
 apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'application'
 apply plugin: 'maven'
+apply plugin: 'docker'
 
-group = 'TRPO'
-version = '0.01'
+version = '0.02'
 
 description = """trpo JsonFormatter"""
 
 
 mainClassName = 'trpo.JsonFormatterKt'
 
-defaultTasks 'fatJar'
+defaultTasks 'docker'
 
 task wrapper(type: Wrapper) {
     gradleVersion = "4.1"
@@ -33,6 +35,20 @@ task fatJar(type: Jar) {
     baseName = project.name + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
+}
+
+docker {
+    baseImage = 'openjdk:8'
+}
+
+task docker(type: Docker) {
+    dependsOn "fatJar"
+    applicationName = "validation-server"
+    setEnvironment("SERVER_PORT", "80")
+    exposePort(80)
+    addFile('build/libs/JsonFormatter-all-0.02.jar', 'opt/JsonFormatter-all-0.02.jar')
+    defaultCommand =  ['java', "-jar", "opt/JsonFormatter-all-0.02.jar"]
+
 }
 
 repositories {
