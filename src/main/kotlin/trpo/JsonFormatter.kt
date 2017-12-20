@@ -29,16 +29,18 @@ fun findOrDefault(errorMessage: String?, vararg defaults: String): List<String> 
  * Validate json.
  *
  * @param jsonString json to validate
+ * @param requestId request id to generate error report
+ * @param resourceName name of json file or "json string"
  * @return json object with input json or with error description.
  */
-fun JsonParser.processJson(jsonString: String, requestId: Int) = try {
+fun JsonParser.processJson(jsonString: String, requestId: Int, resourceName: String) = try {
     parse(jsonString)
 } catch (ex: JsonParseException) {
     val (message, line, column) = findOrDefault(ex.message, "Unknown error", "-1", "-1")
     JsonObject().emplaceProperty("errorCode", message.hashCode())
             .emplaceProperty("errorMessage", message)
             .emplaceProperty("errorPlace", "line $line column $column")
-            .emplaceProperty("resource", "json string")
+            .emplaceProperty("resource", resourceName)
             .emplaceProperty("request-id", requestId)
 }
 
@@ -52,7 +54,8 @@ fun main(args: Array<String>) {
     server.createContext("/") {
         val responseObject = parser.processJson(
                 jsonString = it.requestBody.bufferedReader().readText(),
-                requestId = requestIdGenerator.getAndIncrement()
+                requestId = requestIdGenerator.getAndIncrement(),
+                resourceName = if (it.requestMethod == "PUT") it.requestURI.path else "json string"
         )
         val response = builder.toJson(responseObject) + "\n"
         it.sendResponseHeaders(200, response.length.toLong())
