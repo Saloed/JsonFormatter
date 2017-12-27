@@ -2,5 +2,6 @@
 target/
 build/
 .gradle/
+jenkins_data/
 *.iml
 gradlew.bat
